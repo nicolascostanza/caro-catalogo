@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/caro-catalogo/sw.js', { scope: '/caro-catalogo/' })})}
