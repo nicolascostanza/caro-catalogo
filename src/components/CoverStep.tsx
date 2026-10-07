@@ -160,17 +160,18 @@ export function CoverStep() {
                 VENTA A PARTIR DE {project.business.minUnits} UNIDADES
               </p>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {[0, 1, 2, 3].map((i) => {
-                const p = orderedSelected[i]
-                const url = p?.imageId ? imageUrls[p.imageId] : undefined
-                return (
-                  <div key={i} className={`aspect-[4/3] overflow-hidden rounded-lg ${url ? 'bg-white' : ''}`}>
-                    {url ? <img src={url} alt="" className="h-full w-full object-contain" /> : null}
-                  </div>
-                )
-              })}
-            </div>
+            {orderedSelected.length > 0 ? (
+              <div className="mt-3 flex min-h-[13.5rem] flex-wrap content-center justify-center gap-2">
+                {orderedSelected.map((p) => {
+                  const url = p.imageId ? imageUrls[p.imageId] : undefined
+                  return (
+                    <div key={p.id} className="aspect-[4/3] w-[calc(50%-0.25rem)] overflow-hidden rounded-lg bg-white">
+                      {url ? <img src={url} alt="" className="h-full w-full object-contain" /> : null}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
             <div className="mt-3 flex items-center justify-between text-[9px] text-nude-500">
               <span>{project.business.instagram}</span>
               <span className="truncate pl-2 text-right">{project.business.footerNote}</span>

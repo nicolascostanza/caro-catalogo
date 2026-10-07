@@ -168,6 +168,32 @@ function wrapAndDraw(
   return used
 }
 
+function coverCellPositions(count: number): { x: number; y: number; w: number; h: number }[] {
+  const gap = 12
+  const areaX = MARGIN
+  const areaY = 198
+  const areaW = RIGHT - MARGIN
+  const cellH = 268
+  const areaH = 2 * cellH + gap
+  const cellW = (areaW - gap) / 2
+
+  const rows: number[] = count <= 2 ? [count] : [2, count - 2]
+  const totalH = rows.length * cellH + (rows.length - 1) * gap
+  let y = areaY + (areaH - totalH) / 2
+  const out: { x: number; y: number; w: number; h: number }[] = []
+  for (const n of rows) {
+    if (n <= 0) continue
+    const rowW = n * cellW + (n - 1) * gap
+    let x = areaX + (areaW - rowW) / 2
+    for (let i = 0; i < n; i++) {
+      out.push({ x, y, w: cellW, h: cellH })
+      x += cellW + gap
+    }
+    y += cellH + gap
+  }
+  return out
+}
+
 function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage>): void {
   fillBg(doc)
   const { business } = project
@@ -193,23 +219,13 @@ function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage
     .filter((p): p is Product => Boolean(p && p.imageId))
     .slice(0, 4)
 
-  const gridTop = 198
-  const gap = 12
-  const cellW = (RIGHT - MARGIN - gap) / 2
-  const cellH = 268
-  const positions = [
-    [MARGIN, gridTop],
-    [MARGIN + cellW + gap, gridTop],
-    [MARGIN, gridTop + cellH + gap],
-    [MARGIN + cellW + gap, gridTop + cellH + gap]
-  ]
-  positions.forEach(([x, y], i) => {
-    const product = coverProducts[i]
-    if (product?.imageId) {
-      doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
-      doc.roundedRect(x, y, cellW, cellH, 8, 8, 'F')
-      drawImageInBox(doc, images[product.imageId], x + 8, y + 8, cellW - 16, cellH - 16)
-    }
+  const positions = coverCellPositions(coverProducts.length)
+  coverProducts.forEach((product, i) => {
+    const pos = positions[i]
+    if (!pos || !product.imageId) return
+    doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
+    doc.roundedRect(pos.x, pos.y, pos.w, pos.h, 8, 8, 'F')
+    drawImageInBox(doc, images[product.imageId], pos.x + 8, pos.y + 8, pos.w - 16, pos.h - 16)
   })
 
   drawFooter(doc, business)
@@ -446,6 +462,7 @@ export async function generateCatalogPdf(
 
   return doc.output('blob')
 }
+
 
 
 
