@@ -168,7 +168,9 @@ function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage
     charSpace: 1.5
   })
 
-  const coverProducts = project.products.filter((p) => p.inCover && p.imageId).slice(0, 4)
+  const marked = project.products.filter((p) => p.inCover && p.imageId)
+  const fallback = project.products.filter((p) => p.imageId)
+  const coverProducts = (marked.length > 0 ? marked : fallback).slice(0, 4)
   const gridTop = 255
   const gap = 12
   const cellW = (RIGHT - MARGIN - gap) / 2
