@@ -209,7 +209,7 @@ function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage
   font(doc, F_TEXT, 9, COLORS.taupe)
   doc.text('CATÁLOGO MAYORISTA', PAGE_W / 2, 108, { align: 'center', charSpace: 2 })
 
-  font(doc, F_BOLD, 21, COLORS.dark)
+  font(doc, F_TEXT_MED, 21, COLORS.dark)
   doc.text(business.tagline || '', PAGE_W / 2, 146, { align: 'center' })
 
   font(doc, F_TEXT_BOLD, 8, COLORS.terra)
@@ -466,6 +466,7 @@ export async function generateCatalogPdf(
 
   return doc.output('blob')
 }
+
 
 
 

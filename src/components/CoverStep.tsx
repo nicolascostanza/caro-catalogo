@@ -155,7 +155,7 @@ export function CoverStep() {
             <div className="text-center">
               <p className="font-serif text-xl font-bold text-nude-600">{project.business.name}</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-[0.2em] text-nude-500">Catálogo mayorista</p>
-              <p className="mt-2 font-serif text-base font-bold text-nude-800">{project.business.tagline}</p>
+              <p className="mt-2 text-base font-medium text-nude-800">{project.business.tagline}</p>
               <p className="mt-1 text-[10px] font-semibold tracking-wide text-terracotta">
                 VENTA A PARTIR DE {project.business.minUnits} UNIDADES
               </p>
