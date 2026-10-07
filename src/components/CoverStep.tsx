@@ -2,14 +2,6 @@ import { useState } from 'react'
 import { useProject } from '../store/project'
 import { Card } from './ui'
 
-function SlotPlaceholder({ letter }: { letter: string }) {
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-nude-200 to-nude-300/70">
-      <span className="font-serif text-3xl font-bold text-white/70">{letter}</span>
-    </div>
-  )
-}
-
 export function CoverStep() {
   const { project, toggleCover, setCoverOrder, moveCover, imageUrls } = useProject()
   const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -20,7 +12,6 @@ export function CoverStep() {
     .map((id) => withImage.find((p) => p.id === id))
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
   const available = withImage.filter((p) => !project.coverIds.includes(p.id))
-  const letter = (project.business.name || 'C').trim().charAt(0).toUpperCase() || 'C'
 
   const reorder = (from: number, to: number) => {
     if (from === to) return
@@ -102,17 +93,17 @@ export function CoverStep() {
                         onClick={() => moveCover(p.id, -1)}
                         disabled={i === 0}
                         className="rounded-lg border border-nude-200 px-2 py-0.5 text-nude-500 transition hover:bg-nude-100 disabled:opacity-30"
-                        aria-label="Mover antes"
+                        aria-label="Mover arriba"
                       >
-                        ◀
+                        ↑
                       </button>
                       <button
                         onClick={() => moveCover(p.id, 1)}
                         disabled={i === orderedSelected.length - 1}
                         className="rounded-lg border border-nude-200 px-2 py-0.5 text-nude-500 transition hover:bg-nude-100 disabled:opacity-30"
-                        aria-label="Mover después"
+                        aria-label="Mover abajo"
                       >
-                        ▶
+                        ↓
                       </button>
                       <button
                         onClick={() => toggleCover(p.id)}
@@ -174,8 +165,8 @@ export function CoverStep() {
                 const p = orderedSelected[i]
                 const url = p?.imageId ? imageUrls[p.imageId] : undefined
                 return (
-                  <div key={i} className="aspect-[4/3] overflow-hidden rounded-lg bg-white">
-                    {url ? <img src={url} alt="" className="h-full w-full object-contain" /> : <SlotPlaceholder letter={letter} />}
+                  <div key={i} className={`aspect-[4/3] overflow-hidden rounded-lg ${url ? 'bg-white' : ''}`}>
+                    {url ? <img src={url} alt="" className="h-full w-full object-contain" /> : null}
                   </div>
                 )
               })}
@@ -187,7 +178,7 @@ export function CoverStep() {
           </div>
           {orderedSelected.length === 0 ? (
             <p className="text-center text-xs text-nude-400">
-              Esta es la portada de reserva: un marco armónico con tus iniciales. Elegí fotos para completarla.
+              Sin fotos la tapa queda limpia, solo con el fondo. Elegí fotos para completarla.
             </p>
           ) : null}
         </Card>
