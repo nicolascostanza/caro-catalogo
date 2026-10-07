@@ -1,62 +1,161 @@
+import { useState } from 'react'
 import { useProject } from '../store/project'
 import { Card } from './ui'
 
-export function CoverStep() {
-  const { project, updateProduct, imageUrls } = useProject()
-  const withImage = project.products.filter((p) => p.imageId)
-  const selected = withImage.filter((p) => p.inCover).slice(0, 4)
+function SlotPlaceholder({ letter }: { letter: string }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-nude-200 to-nude-300/70">
+      <span className="font-serif text-3xl font-bold text-white/70">{letter}</span>
+    </div>
+  )
+}
 
-  const toggle = (id: string) => {
-    const product = project.products.find((p) => p.id === id)
-    if (!product) return
-    if (!product.inCover && selected.length >= 4) {
+export function CoverStep() {
+  const { project, toggleCover, setCoverOrder, moveCover, imageUrls } = useProject()
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+
+  const withImage = project.products.filter((p) => p.imageId)
+  const orderedSelected = project.coverIds
+    .map((id) => withImage.find((p) => p.id === id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
+  const available = withImage.filter((p) => !project.coverIds.includes(p.id))
+  const letter = (project.business.name || 'C').trim().charAt(0).toUpperCase() || 'C'
+
+  const reorder = (from: number, to: number) => {
+    if (from === to) return
+    const ids = orderedSelected.map((p) => p.id)
+    const [item] = ids.splice(from, 1)
+    ids.splice(to, 0, item)
+    setCoverOrder(ids)
+  }
+
+  const add = (id: string) => {
+    if (project.coverIds.length >= 4) {
       alert('Podés elegir hasta 4 fotos para la tapa.')
       return
     }
-    updateProduct(id, { inCover: !product.inCover })
+    toggleCover(id)
   }
-
-  const previewIds = selected.length > 0 ? selected.map((p) => p.id) : withImage.slice(0, 4).map((p) => p.id)
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="font-serif text-2xl font-bold text-nude-700">Tapa</h2>
-        <p className="mt-1 text-sm text-nude-500">Elegí hasta 4 fotos para la portada. Si no elegís, usamos las primeras.</p>
+        <p className="mt-1 text-sm text-nude-500">
+          Elegí hasta 4 fotos para la portada y ordenalas a tu gusto. Si no elegís ninguna, te mostramos una tapa de reserva.
+        </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-nude-500">Fotos disponibles</span>
-          {withImage.length === 0 ? (
-            <p className="py-6 text-center text-sm text-nude-400">
-              Cargá fotos en la sección Productos para elegir las de la tapa.
-            </p>
+        <Card className="space-y-4">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-nude-500">
+              En la tapa · {orderedSelected.length}/4
+            </span>
+            <p className="mt-0.5 text-xs text-nude-400">Arrastrá para cambiar el orden.</p>
+          </div>
+
+          {orderedSelected.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-nude-300 bg-nude-50 px-4 py-6 text-center text-sm text-nude-500">
+              Todavía no hay fotos elegidas. Tocá una foto de abajo para sumarla.
+            </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2.5">
-              {withImage.map((p) => {
+            <div className="space-y-2">
+              {orderedSelected.map((p, i) => {
                 const url = p.imageId ? imageUrls[p.imageId] : undefined
                 return (
-                  <button
+                  <div
                     key={p.id}
-                    onClick={() => toggle(p.id)}
-                    className={`relative aspect-square overflow-hidden rounded-xl border-2 bg-white transition ${
-                      p.inCover ? 'border-nude-600' : 'border-nude-200'
-                    }`}
+                    draggable
+                    onDragStart={() => setDragIndex(i)}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setOverIndex(i)
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      if (dragIndex !== null) reorder(dragIndex, i)
+                      setDragIndex(null)
+                      setOverIndex(null)
+                    }}
+                    onDragEnd={() => {
+                      setDragIndex(null)
+                      setOverIndex(null)
+                    }}
+                    className={`flex items-center gap-3 rounded-xl border bg-white p-2 transition ${
+                      overIndex === i && dragIndex !== null ? 'border-nude-500 ring-2 ring-nude-300/60' : 'border-nude-200'
+                    } ${dragIndex === i ? 'opacity-60' : ''}`}
                   >
-                    {url ? <img src={url} alt={p.name} className="h-full w-full object-contain" /> : null}
-                    <span
-                      className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                        p.inCover ? 'bg-nude-600 text-white' : 'bg-white/80 text-nude-400'
-                      }`}
-                    >
-                      {p.inCover ? '✓' : '+'}
+                    <span className="cursor-grab select-none text-nude-300" aria-hidden>
+                      ⠿
                     </span>
-                  </button>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-nude-600 text-xs font-bold text-white">
+                      {i + 1}
+                    </span>
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-nude-200 bg-white">
+                      {url ? <img src={url} alt={p.name} className="h-full w-full object-contain" /> : null}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm text-nude-700">{p.name || 'Sin nombre'}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => moveCover(p.id, -1)}
+                        disabled={i === 0}
+                        className="rounded-lg border border-nude-200 px-2 py-0.5 text-nude-500 transition hover:bg-nude-100 disabled:opacity-30"
+                        aria-label="Mover antes"
+                      >
+                        ◀
+                      </button>
+                      <button
+                        onClick={() => moveCover(p.id, 1)}
+                        disabled={i === orderedSelected.length - 1}
+                        className="rounded-lg border border-nude-200 px-2 py-0.5 text-nude-500 transition hover:bg-nude-100 disabled:opacity-30"
+                        aria-label="Mover después"
+                      >
+                        ▶
+                      </button>
+                      <button
+                        onClick={() => toggleCover(p.id)}
+                        className="rounded-lg border border-nude-200 px-2 py-0.5 text-nude-500 transition hover:bg-red-50 hover:text-red-600"
+                        aria-label="Quitar de la tapa"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
                 )
               })}
             </div>
           )}
+
+          <div className="border-t border-nude-200 pt-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-nude-500">Disponibles</span>
+            {available.length === 0 ? (
+              <p className="mt-2 text-xs text-nude-400">
+                {withImage.length === 0
+                  ? 'Cargá fotos en la sección Productos para elegir las de la tapa.'
+                  : 'Todas las fotos con imagen ya están en la tapa.'}
+              </p>
+            ) : (
+              <div className="mt-2 grid grid-cols-4 gap-2.5 sm:grid-cols-6">
+                {available.map((p) => {
+                  const url = p.imageId ? imageUrls[p.imageId] : undefined
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => add(p.id)}
+                      className="group relative aspect-square overflow-hidden rounded-xl border-2 border-nude-200 bg-white transition hover:border-nude-400"
+                    >
+                      {url ? <img src={url} alt={p.name} className="h-full w-full object-contain" /> : null}
+                      <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/85 text-[11px] font-bold text-nude-500">
+                        +
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </Card>
 
         <Card className="space-y-3">
@@ -72,11 +171,11 @@ export function CoverStep() {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {[0, 1, 2, 3].map((i) => {
-                const id = previewIds[i]
-                const url = id ? imageUrls[id] : undefined
+                const p = orderedSelected[i]
+                const url = p?.imageId ? imageUrls[p.imageId] : undefined
                 return (
                   <div key={i} className="aspect-[4/3] overflow-hidden rounded-lg bg-white">
-                    {url ? <img src={url} alt="" className="h-full w-full object-contain" /> : null}
+                    {url ? <img src={url} alt="" className="h-full w-full object-contain" /> : <SlotPlaceholder letter={letter} />}
                   </div>
                 )
               })}
@@ -86,6 +185,11 @@ export function CoverStep() {
               <span className="truncate pl-2 text-right">{project.business.footerNote}</span>
             </div>
           </div>
+          {orderedSelected.length === 0 ? (
+            <p className="text-center text-xs text-nude-400">
+              Esta es la portada de reserva: un marco armónico con tus iniciales. Elegí fotos para completarla.
+            </p>
+          ) : null}
         </Card>
       </div>
     </div>

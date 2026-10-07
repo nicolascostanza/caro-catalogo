@@ -37,7 +37,6 @@ export interface Product {
   details: string
   imageId: string | null
   quality: ImageQuality | null
-  inCover: boolean
 }
 
 export type PdfLayout = 'single' | 'grid'
@@ -46,6 +45,7 @@ export interface Project {
   version: number
   business: Business
   products: Product[]
+  coverIds: string[]
   layout: PdfLayout
   gridPerPage: 2 | 4
   updatedAt: number

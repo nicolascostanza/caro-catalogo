@@ -168,6 +168,17 @@ function wrapAndDraw(
   return used
 }
 
+function drawCoverPlaceholder(doc: jsPDF, x: number, y: number, w: number, h: number, letter: string): void {
+  doc.setFillColor(239, 231, 220)
+  doc.roundedRect(x, y, w, h, 8, 8, 'F')
+  doc.setDrawColor(216, 199, 182)
+  doc.setLineWidth(0.8)
+  doc.roundedRect(x + 7, y + 7, w - 14, h - 14, 6, 6, 'S')
+  const size = Math.min(w, h) * 0.3
+  font(doc, F_BOLD, size, [203, 184, 165] as RGB)
+  doc.text(letter, x + w / 2, y + h / 2 + size * 0.34, { align: 'center' })
+}
+
 function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage>): void {
   fillBg(doc)
   const { business } = project
@@ -188,9 +199,11 @@ function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage
     charSpace: 1.5
   })
 
-  const marked = project.products.filter((p) => p.inCover && p.imageId)
-  const fallback = project.products.filter((p) => p.imageId)
-  const coverProducts = (marked.length > 0 ? marked : fallback).slice(0, 4)
+  const coverProducts = project.coverIds
+    .map((id) => project.products.find((p) => p.id === id))
+    .filter((p): p is Product => Boolean(p && p.imageId))
+    .slice(0, 4)
+  const letter = (business.name || 'C').trim().charAt(0).toUpperCase() || 'C'
 
   const gridTop = 198
   const gap = 12
@@ -203,11 +216,13 @@ function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage
     [MARGIN + cellW + gap, gridTop + cellH + gap]
   ]
   positions.forEach(([x, y], i) => {
-    doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
-    doc.roundedRect(x, y, cellW, cellH, 8, 8, 'F')
     const product = coverProducts[i]
     if (product?.imageId) {
+      doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
+      doc.roundedRect(x, y, cellW, cellH, 8, 8, 'F')
       drawImageInBox(doc, images[product.imageId], x + 8, y + 8, cellW - 16, cellH - 16)
+    } else {
+      drawCoverPlaceholder(doc, x, y, cellW, cellH, letter)
     }
   })
 
@@ -445,4 +460,5 @@ export async function generateCatalogPdf(
 
   return doc.output('blob')
 }
+
 

@@ -113,7 +113,7 @@ export function ProductsStep() {
                         <QualityDot score={p.quality.score} /> calidad
                       </span>
                     ) : null}
-                    {p.inCover ? <Badge tone="neutral">Tapa</Badge> : null}
+                    {project.coverIds.includes(p.id) ? <Badge tone="neutral">Tapa</Badge> : null}
                   </div>
                 </button>
                 <div className="flex flex-col gap-1">
@@ -146,13 +146,13 @@ export function ProductsStep() {
 
       {project.products.length > 0 ? (
         <p className="text-center text-xs text-nude-400">
-          Tip: marcá “Mostrar en la tapa” en hasta 4 productos con foto.
+          Tip: elegí hasta 4 fotos para la tapa desde “Mostrar en la tapa” o en la pestaña Tapa.
         </p>
       ) : null}
 
-      {project.products.length > 0 && project.products.filter((p) => p.inCover).length === 0 ? (
+      {project.products.length > 0 && project.coverIds.length === 0 ? (
         <div className="rounded-xl bg-nude-100 px-3.5 py-2.5 text-center text-xs text-nude-500">
-          No elegiste fotos para la tapa: se usarán las de los primeros productos con imagen.
+          Todavía no elegiste fotos para la tapa: te mostramos una portada de reserva hasta que elijas.
         </div>
       ) : null}
     </div>

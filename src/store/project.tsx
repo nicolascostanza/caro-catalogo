@@ -26,6 +26,7 @@ export function defaultProject(): Project {
     version: PROJECT_VERSION,
     business: defaultBusiness(),
     products: [],
+    coverIds: [],
     layout: 'single',
     gridPerPage: 2,
     updatedAt: Date.now()
@@ -41,9 +42,18 @@ export function emptyProduct(minUnits: number): Product {
     minUnits,
     details: '',
     imageId: null,
-    quality: null,
-    inCover: false
+    quality: null
   }
+}
+
+/** Normaliza proyectos guardados (incluye migración del viejo campo `inCover`). */
+export function normalizeProject(raw: Project): Project {
+  const base = { ...defaultProject(), ...raw, business: { ...defaultBusiness(), ...raw.business } }
+  const legacy = raw.products as (Product & { inCover?: boolean })[]
+  const coverIds = Array.isArray(raw.coverIds)
+    ? raw.coverIds.filter((id) => base.products.some((p) => p.id === id))
+    : legacy.filter((p) => p.inCover).map((p) => p.id)
+  return { ...base, products: legacy, coverIds }
 }
 
 interface ProjectContextValue {
@@ -57,6 +67,9 @@ interface ProjectContextValue {
   updateProduct: (id: string, patch: Partial<Product>) => void
   removeProduct: (id: string) => void
   moveProduct: (id: string, dir: -1 | 1) => void
+  toggleCover: (id: string) => void
+  setCoverOrder: (ids: string[]) => void
+  moveCover: (id: string, dir: -1 | 1) => void
   setProductImage: (id: string, file: File | null) => Promise<void>
   replaceProject: (project: Project, images: Record<string, Blob>) => Promise<void>
   clearAll: () => Promise<void>
@@ -76,7 +89,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     ;(async () => {
       const stored = await db.loadProject()
       if (cancelled) return
-      setProject(stored ? { ...defaultProject(), ...stored, business: { ...defaultBusiness(), ...stored.business } } : defaultProject())
+      setProject(stored ? normalizeProject(stored) : defaultProject())
 
       const keys = await db.allImageKeys()
       const urls: Record<string, string> = {}
@@ -135,7 +148,11 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   const removeProduct = useCallback(
     (id: string) => {
-      patch((prev) => ({ ...prev, products: prev.products.filter((item) => item.id !== id) }))
+      patch((prev) => ({
+        ...prev,
+        products: prev.products.filter((item) => item.id !== id),
+        coverIds: prev.coverIds.filter((cid) => cid !== id)
+      }))
       const url = urlsRef.current[id]
       if (url) {
         URL.revokeObjectURL(url)
@@ -157,6 +174,37 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         const [item] = next.splice(idx, 1)
         next.splice(target, 0, item)
         return { ...prev, products: next }
+      }),
+    [patch]
+  )
+
+  const toggleCover = useCallback(
+    (id: string) =>
+      patch((prev) => {
+        if (prev.coverIds.includes(id)) {
+          return { ...prev, coverIds: prev.coverIds.filter((cid) => cid !== id) }
+        }
+        if (prev.coverIds.length >= 4) return prev
+        return { ...prev, coverIds: [...prev.coverIds, id] }
+      }),
+    [patch]
+  )
+
+  const setCoverOrder = useCallback(
+    (ids: string[]) => patch((prev) => ({ ...prev, coverIds: ids.slice(0, 4) })),
+    [patch]
+  )
+
+  const moveCover = useCallback(
+    (id: string, dir: -1 | 1) =>
+      patch((prev) => {
+        const idx = prev.coverIds.indexOf(id)
+        const target = idx + dir
+        if (idx < 0 || target < 0 || target >= prev.coverIds.length) return prev
+        const next = [...prev.coverIds]
+        const [item] = next.splice(idx, 1)
+        next.splice(target, 0, item)
+        return { ...prev, coverIds: next }
       }),
     [patch]
   )
@@ -196,7 +244,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       }
       urlsRef.current = urls
       setImageUrls(urls)
-      setProject({ ...defaultProject(), ...next, business: { ...defaultBusiness(), ...next.business } })
+      setProject(normalizeProject(next))
     },
     []
   )
@@ -221,6 +269,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       updateProduct,
       removeProduct,
       moveProduct,
+      toggleCover,
+      setCoverOrder,
+      moveCover,
       setProductImage,
       replaceProject,
       clearAll
@@ -236,6 +287,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       updateProduct,
       removeProduct,
       moveProduct,
+      toggleCover,
+      setCoverOrder,
+      moveCover,
       setProductImage,
       replaceProject,
       clearAll

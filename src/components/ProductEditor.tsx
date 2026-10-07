@@ -14,7 +14,7 @@ export function ProductEditor({
   open: boolean
   onClose: () => void
 }) {
-  const { updateProduct, setProductImage, removeProduct, imageUrls } = useProject()
+  const { updateProduct, setProductImage, removeProduct, imageUrls, project, toggleCover } = useProject()
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const url = product.imageId ? imageUrls[product.imageId] : undefined
@@ -158,10 +158,14 @@ export function ProductEditor({
           <input
             type="checkbox"
             className="h-4 w-4 accent-nude-600"
-            checked={product.inCover}
-            onChange={(e) => updateProduct(product.id, { inCover: e.target.checked })}
+            disabled={!url}
+            checked={project.coverIds.includes(product.id)}
+            onChange={() => toggleCover(product.id)}
           />
-          <span className="text-sm text-nude-700">Mostrar esta foto en la tapa</span>
+          <span className="text-sm text-nude-700">
+            Mostrar esta foto en la tapa
+            {!url ? <span className="ml-1 text-nude-400">(cargá una foto primero)</span> : null}
+          </span>
         </label>
       </div>
     </Modal>
