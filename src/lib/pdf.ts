@@ -19,10 +19,12 @@ const COLORS = {
   white: [255, 255, 255] as RGB
 }
 
+// jsPDF usa origen arriba-izquierda: y crece hacia abajo.
 const PAGE_W = 595.2756
 const PAGE_H = 841.8898
 const MARGIN = 42
 const RIGHT = PAGE_W - MARGIN
+const FOOTER_Y = 800
 
 const F_PLAIN = 'Playfair'
 const F_BOLD = 'PlayfairBold'
@@ -132,65 +134,19 @@ function drawInstagramIcon(doc: jsPDF, x: number, y: number, size: number, color
 }
 
 function drawFooter(doc: jsPDF, business: Business): void {
-  const y = 44
-  drawInstagramIcon(doc, MARGIN, y - 1, 12, COLORS.brown)
+  drawInstagramIcon(doc, MARGIN, FOOTER_Y - 9, 12, COLORS.brown)
   font(doc, F_TEXT_BOLD, 9.2, COLORS.dark)
-  doc.text(business.instagram || '', MARGIN + 18, y + 7)
+  doc.text(business.instagram || '', MARGIN + 18, FOOTER_Y)
   font(doc, F_TEXT, 7.7, COLORS.taupe)
-  doc.text(business.footerNote || '', RIGHT, y + 7, { align: 'right' })
+  doc.text(business.footerNote || '', RIGHT, FOOTER_Y, { align: 'right' })
 }
 
 function drawHeader(doc: jsPDF, business: Business): void {
   font(doc, F_BOLD, 22, COLORS.brown)
-  doc.text(business.name || '', MARGIN, 783.89)
+  doc.text(business.name || '', MARGIN, 58)
   font(doc, F_TEXT, 7.8, COLORS.taupe)
-  doc.text(business.subtitle || '', MARGIN + 2, 767.89)
-  line(doc, MARGIN, 753.89, RIGHT, 753.89, COLORS.line, 1)
-}
-
-function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage>): void {
-  fillBg(doc)
-  const { business } = project
-
-  font(doc, F_BOLD, 34, COLORS.brown)
-  doc.text(business.name || '', PAGE_W / 2, 772, { align: 'center' })
-  line(doc, PAGE_W / 2 - 96, 757, PAGE_W / 2 + 96, 757, COLORS.line, 1.2)
-
-  font(doc, F_TEXT, 9, COLORS.taupe)
-  doc.text('CATÁLOGO MAYORISTA', PAGE_W / 2, 741, { align: 'center', charSpace: 2 })
-
-  font(doc, F_BOLD, 21, COLORS.dark)
-  doc.text(business.tagline || '', PAGE_W / 2, 706, { align: 'center' })
-
-  font(doc, F_TEXT_BOLD, 8, COLORS.terra)
-  doc.text(`VENTA A PARTIR DE ${business.minUnits} UNIDADES`, PAGE_W / 2, 683, {
-    align: 'center',
-    charSpace: 1.5
-  })
-
-  const marked = project.products.filter((p) => p.inCover && p.imageId)
-  const fallback = project.products.filter((p) => p.imageId)
-  const coverProducts = (marked.length > 0 ? marked : fallback).slice(0, 4)
-  const gridTop = 255
-  const gap = 12
-  const cellW = (RIGHT - MARGIN - gap) / 2
-  const cellH = 193
-  const positions = [
-    [MARGIN, gridTop],
-    [MARGIN + cellW + gap, gridTop],
-    [MARGIN, gridTop + cellH + gap],
-    [MARGIN + cellW + gap, gridTop + cellH + gap]
-  ]
-  positions.forEach(([x, y], i) => {
-    doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
-    doc.roundedRect(x, y, cellW, cellH, 8, 8, 'F')
-    const product = coverProducts[i]
-    if (product?.imageId) {
-      drawImageInBox(doc, images[product.imageId], x + 8, y + 8, cellW - 16, cellH - 16)
-    }
-  })
-
-  drawFooter(doc, business)
+  doc.text(business.subtitle || '', MARGIN + 2, 74)
+  line(doc, MARGIN, 88, RIGHT, 88, COLORS.line, 1)
 }
 
 function wrapAndDraw(
@@ -212,46 +168,73 @@ function wrapAndDraw(
   return used
 }
 
-function drawDetails(doc: jsPDF, product: Product, y: number): void {
-  const text = (product.details || '').trim()
-  if (!text) return
-  const maxWidth = RIGHT - MARGIN
-  const available = y - 78
-  const sizes = [8.8, 8.4, 8, 7.6, 7.2]
-  for (const size of sizes) {
-    font(doc, F_TEXT, size, COLORS.taupe)
-    const lineHeight = size * 1.2
-    const lines = doc.splitTextToSize(text, maxWidth) as string[]
-    if (lines.length * lineHeight <= available || size === sizes[sizes.length - 1]) {
-      const maxLines = Math.max(1, Math.floor(available / lineHeight))
-      wrapAndDraw(doc, text, MARGIN, y, maxWidth, lineHeight, maxLines)
-      return
+function drawCover(doc: jsPDF, project: Project, images: Record<string, PdfImage>): void {
+  fillBg(doc)
+  const { business } = project
+
+  font(doc, F_BOLD, 34, COLORS.brown)
+  doc.text(business.name || '', PAGE_W / 2, 70, { align: 'center' })
+  line(doc, PAGE_W / 2 - 96, 88, PAGE_W / 2 + 96, 88, COLORS.line, 1.2)
+
+  font(doc, F_TEXT, 9, COLORS.taupe)
+  doc.text('CATÁLOGO MAYORISTA', PAGE_W / 2, 108, { align: 'center', charSpace: 2 })
+
+  font(doc, F_BOLD, 21, COLORS.dark)
+  doc.text(business.tagline || '', PAGE_W / 2, 146, { align: 'center' })
+
+  font(doc, F_TEXT_BOLD, 8, COLORS.terra)
+  doc.text(`VENTA A PARTIR DE ${business.minUnits} UNIDADES`, PAGE_W / 2, 170, {
+    align: 'center',
+    charSpace: 1.5
+  })
+
+  const marked = project.products.filter((p) => p.inCover && p.imageId)
+  const fallback = project.products.filter((p) => p.imageId)
+  const coverProducts = (marked.length > 0 ? marked : fallback).slice(0, 4)
+
+  const gridTop = 198
+  const gap = 12
+  const cellW = (RIGHT - MARGIN - gap) / 2
+  const cellH = 268
+  const positions = [
+    [MARGIN, gridTop],
+    [MARGIN + cellW + gap, gridTop],
+    [MARGIN, gridTop + cellH + gap],
+    [MARGIN + cellW + gap, gridTop + cellH + gap]
+  ]
+  positions.forEach(([x, y], i) => {
+    doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
+    doc.roundedRect(x, y, cellW, cellH, 8, 8, 'F')
+    const product = coverProducts[i]
+    if (product?.imageId) {
+      drawImageInBox(doc, images[product.imageId], x + 8, y + 8, cellW - 16, cellH - 16)
     }
-  }
+  })
+
+  drawFooter(doc, business)
 }
 
-function drawPriceBox(doc: jsPDF, product: Product, business: Business): void {
+function drawPriceBox(doc: jsPDF, product: Product, top: number): void {
   const x = MARGIN
-  const y = 185
   const w = RIGHT - MARGIN
-  const h = 72
+  const h = 80
   doc.setFillColor(COLORS.brown[0], COLORS.brown[1], COLORS.brown[2])
-  doc.roundedRect(x, y, w, h, 7, 7, 'F')
+  doc.roundedRect(x, top, w, h, 7, 7, 'F')
 
+  const leftX = x + 18
   font(doc, F_TEXT_BOLD, 9, COLORS.white)
-  doc.text('VENTA MAYORISTA', x + 18, 234)
+  doc.text('VENTA MAYORISTA', leftX, top + 30)
   font(doc, F_BOLD, 24, COLORS.white)
-  doc.text(money(product.price), x + 18, 207)
+  doc.text(money(product.price), leftX, top + 62)
 
   const rx = RIGHT - 18
   font(doc, F_TEXT_BOLD, 8.5, COLORS.white)
-  doc.text('PRECIO UNITARIO', rx, 232, { align: 'right' })
+  doc.text('PRECIO UNITARIO', rx, top + 26, { align: 'right' })
   font(doc, F_TEXT, 8.5, COLORS.white)
-  doc.text(`Compra mínima: ${product.minUnits} unidades`, rx, 216, { align: 'right' })
-  const bulto = product.price * product.minUnits
-  doc.text(`Bulto x${product.minUnits}: ${money(bulto)}`, rx, 200, { align: 'right' })
-
-  void business
+  doc.text(`Compra mínima: ${product.minUnits} unidades`, rx, top + 45, { align: 'right' })
+  doc.text(`Bulto x${product.minUnits}: ${money(product.price * product.minUnits)}`, rx, top + 64, {
+    align: 'right'
+  })
 }
 
 function drawProductSingle(
@@ -264,24 +247,38 @@ function drawProductSingle(
   drawHeader(doc, business)
 
   font(doc, F_BOLD, 19, COLORS.dark)
-  doc.text(product.name || 'Producto sin nombre', MARGIN, 721.89)
+  doc.text(product.name || 'Producto sin nombre', MARGIN, 124)
   font(doc, F_BOLD, 9, COLORS.terra)
-  doc.text(product.line || '', MARGIN + 2, 703.89)
+  doc.text(product.line || '', MARGIN + 2, 142)
 
   doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
-  doc.roundedRect(MARGIN, 285, RIGHT - MARGIN, 350, 8, 8, 'F')
+  doc.roundedRect(MARGIN, 160, RIGHT - MARGIN, 350, 8, 8, 'F')
   if (image) {
-    drawImageInBox(doc, image, MARGIN + 14, 299, RIGHT - MARGIN - 28, 322)
+    drawImageInBox(doc, image, MARGIN + 14, 174, RIGHT - MARGIN - 28, 322)
   } else {
     font(doc, F_TEXT, 9, COLORS.taupe)
-    doc.text('Sin imagen cargada', PAGE_W / 2, 462, { align: 'center' })
+    doc.text('Sin imagen cargada', PAGE_W / 2, 340, { align: 'center' })
   }
 
-  drawPriceBox(doc, product, business)
+  drawPriceBox(doc, product, 536)
 
   font(doc, F_BOLD, 11, COLORS.dark)
-  doc.text('Detalles', MARGIN, 158)
-  drawDetails(doc, product, 143)
+  doc.text('Detalles', MARGIN, 650)
+  const details = (product.details || '').trim()
+  if (details) {
+    const available = 785 - 668
+    const sizes = [8.8, 8.4, 8, 7.6, 7.2]
+    for (const size of sizes) {
+      font(doc, F_TEXT, size, COLORS.taupe)
+      const lineHeight = size * 1.2
+      const lines = doc.splitTextToSize(details, RIGHT - MARGIN) as string[]
+      if (lines.length * lineHeight <= available || size === sizes[sizes.length - 1]) {
+        const maxLines = Math.max(1, Math.floor(available / lineHeight))
+        wrapAndDraw(doc, details, MARGIN, 668, RIGHT - MARGIN, lineHeight, maxLines)
+        break
+      }
+    }
+  }
 
   drawFooter(doc, business)
 }
@@ -329,16 +326,16 @@ function drawProductGrid(
   fillBg(doc)
   drawHeader(doc, project.business)
   const perPage = project.gridPerPage
-  const top = 730
-  const bottom = 90
+  const top = 112
+  const bottom = 770
   const gap = 16
-  const areaH = top - bottom
+  const areaH = bottom - top
 
   if (perPage === 2) {
     const w = RIGHT - MARGIN
     const h = (areaH - gap) / 2
     items.forEach((p, i) => {
-      const y = top - h - i * (h + gap)
+      const y = top + i * (h + gap)
       drawProductCard(doc, p, p.imageId ? images[p.imageId] : undefined, MARGIN, y, w, h)
     })
   } else {
@@ -348,7 +345,7 @@ function drawProductGrid(
       const col = i % 2
       const row = Math.floor(i / 2)
       const x = MARGIN + col * (w + gap)
-      const y = top - h - row * (h + gap)
+      const y = top + row * (h + gap)
       drawProductCard(doc, p, p.imageId ? images[p.imageId] : undefined, x, y, w, h)
     })
   }
@@ -359,26 +356,41 @@ function drawBackCover(doc: jsPDF, business: Business): void {
   fillBg(doc)
 
   font(doc, F_BOLD, 30, COLORS.brown)
-  doc.text(business.name || '', PAGE_W / 2, 560, { align: 'center' })
-  line(doc, PAGE_W / 2 - 96, 545, PAGE_W / 2 + 96, 545, COLORS.line, 1.2)
+  doc.text(business.name || '', PAGE_W / 2, 118, { align: 'center' })
 
   font(doc, F_BOLD, 18, COLORS.dark)
-  doc.text('Venta mayorista', PAGE_W / 2, 500, { align: 'center' })
-  font(doc, F_TEXT, 11, COLORS.taupe)
-  doc.text(`A partir de ${business.minUnits} unidades`, PAGE_W / 2, 476, { align: 'center' })
+  doc.text('Venta mayorista', PAGE_W / 2, 160, { align: 'center' })
+
+  font(doc, F_TEXT_BOLD, 11, COLORS.terra)
+  doc.text(`A partir de ${business.minUnits} unidades`, PAGE_W / 2, 184, { align: 'center' })
 
   font(doc, F_TEXT, 10, COLORS.taupe)
-  const note = doc.splitTextToSize(business.backNote || '', 340) as string[]
-  note.forEach((l, i) => doc.text(l, PAGE_W / 2, 444 + i * 14, { align: 'center' }))
+  const note = doc.splitTextToSize(business.backNote || '', 360) as string[]
+  note.forEach((l, i) => doc.text(l, PAGE_W / 2, 212 + i * 14, { align: 'center' }))
+
+  const boxX = MARGIN
+  const boxY = 345
+  const boxW = RIGHT - MARGIN
+  const boxH = 290
+  doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
+  doc.roundedRect(boxX, boxY, boxW, boxH, 12, 12, 'F')
+
+  font(doc, F_BOLD, 18, COLORS.brown)
+  doc.text('Seguinos en Instagram', PAGE_W / 2, 420, { align: 'center' })
+
+  const handle = business.instagram || ''
+  font(doc, F_BOLD, 18, COLORS.brown)
+  const textW = doc.getTextWidth(handle)
+  const iconSize = 15
+  const iconGap = 8
+  const groupW = iconSize + iconGap + textW
+  const startX = PAGE_W / 2 - groupW / 2
+  drawInstagramIcon(doc, startX, 452, iconSize, COLORS.brown)
+  doc.text(handle, startX + iconSize + iconGap, 466)
 
   font(doc, F_TEXT, 9, COLORS.taupe)
-  doc.text('Seguinos en Instagram', PAGE_W / 2, 384, { align: 'center' })
-  font(doc, F_BOLD, 22, COLORS.brown)
-  doc.text(business.instagram || '', PAGE_W / 2, 356, { align: 'center' })
-
-  font(doc, F_TEXT, 9, COLORS.taupe)
-  const rubros = doc.splitTextToSize(business.rubros || '', 400) as string[]
-  rubros.forEach((l, i) => doc.text(l, PAGE_W / 2, 300 - i * 14, { align: 'center' }))
+  const rubros = doc.splitTextToSize(business.rubros || '', 380) as string[]
+  rubros.forEach((l, i) => doc.text(l, PAGE_W / 2, 512 + i * 14, { align: 'center' }))
 
   drawFooter(doc, business)
 }
