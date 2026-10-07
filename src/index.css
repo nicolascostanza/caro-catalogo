@@ -25,6 +25,13 @@
 }
 @font-face {
   font-family: 'Inter';
+  src: url('./assets/fonts/inter-500.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
   src: url('./assets/fonts/inter-600.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;

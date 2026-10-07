@@ -5,6 +5,7 @@ import { blobToDataUrl, loadImageFromUrl } from './imageUtils'
 import playfair400Url from '../assets/fonts/playfair-400.ttf?url'
 import playfair700Url from '../assets/fonts/playfair-700.ttf?url'
 import inter400Url from '../assets/fonts/inter-400.ttf?url'
+import inter500Url from '../assets/fonts/inter-500.ttf?url'
 import inter600Url from '../assets/fonts/inter-600.ttf?url'
 
 type RGB = [number, number, number]
@@ -29,6 +30,7 @@ const FOOTER_Y = 800
 const F_PLAIN = 'Playfair'
 const F_BOLD = 'PlayfairBold'
 const F_TEXT = 'Inter'
+const F_TEXT_MED = 'InterMed'
 const F_TEXT_BOLD = 'InterSemi'
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -51,16 +53,18 @@ let fontCache: FontEntry[] | null = null
 
 async function loadFontData(): Promise<FontEntry[]> {
   if (fontCache) return fontCache
-  const [p4, p7, i4, i6] = await Promise.all([
+  const [p4, p7, i4, i5, i6] = await Promise.all([
     fetch(playfair400Url).then((r) => r.arrayBuffer()),
     fetch(playfair700Url).then((r) => r.arrayBuffer()),
     fetch(inter400Url).then((r) => r.arrayBuffer()),
+    fetch(inter500Url).then((r) => r.arrayBuffer()),
     fetch(inter600Url).then((r) => r.arrayBuffer())
   ])
   fontCache = [
     { file: 'playfair-400.ttf', name: F_PLAIN, b64: toBase64(p4) },
     { file: 'playfair-700.ttf', name: F_BOLD, b64: toBase64(p7) },
     { file: 'inter-400.ttf', name: F_TEXT, b64: toBase64(i4) },
+    { file: 'inter-500.ttf', name: F_TEXT_MED, b64: toBase64(i5) },
     { file: 'inter-600.ttf', name: F_TEXT_BOLD, b64: toBase64(i6) }
   ]
   return fontCache
@@ -241,7 +245,7 @@ function drawPriceBox(doc: jsPDF, product: Product, top: number): void {
   const leftX = x + 18
   font(doc, F_TEXT_BOLD, 9, COLORS.white)
   doc.text('VENTA MAYORISTA', leftX, top + 30)
-  font(doc, F_BOLD, 24, COLORS.white)
+  font(doc, F_TEXT_MED, 24, COLORS.white)
   doc.text(money(product.price), leftX, top + 62)
 
   const rx = RIGHT - 18
@@ -263,9 +267,9 @@ function drawProductSingle(
   fillBg(doc)
   drawHeader(doc, business)
 
-  font(doc, F_BOLD, 19, COLORS.dark)
+  font(doc, F_TEXT_MED, 19, COLORS.dark)
   doc.text(product.name || 'Producto sin nombre', MARGIN, 124)
-  font(doc, F_BOLD, 9, COLORS.terra)
+  font(doc, F_TEXT_MED, 9, COLORS.terra)
   doc.text(product.line || '', MARGIN + 2, 142)
 
   doc.setFillColor(COLORS.white[0], COLORS.white[1], COLORS.white[2])
@@ -322,11 +326,11 @@ function drawProductCard(
   }
 
   const baseY = y + h - textH + 18
-  font(doc, F_BOLD, 13, COLORS.dark)
+  font(doc, F_TEXT_MED, 13, COLORS.dark)
   doc.text(product.name || 'Producto', x + 12, baseY, { maxWidth: w - 24 })
   font(doc, F_TEXT, 8, COLORS.taupe)
   doc.text(product.line || '', x + 12, baseY + 14, { maxWidth: w - 24 })
-  font(doc, F_BOLD, 15, COLORS.brown)
+  font(doc, F_TEXT_MED, 15, COLORS.brown)
   doc.text(money(product.price), x + 12, baseY + 34)
   font(doc, F_TEXT, 7.5, COLORS.taupe)
   doc.text(`x${product.minUnits}: ${money(product.price * product.minUnits)}`, x + w - 12, baseY + 34, {
@@ -462,6 +466,8 @@ export async function generateCatalogPdf(
 
   return doc.output('blob')
 }
+
+
 
 
 
