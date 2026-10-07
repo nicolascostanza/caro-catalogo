@@ -277,13 +277,13 @@ function drawProductSingle(
     doc.text('Sin imagen cargada', PAGE_W / 2, 340, { align: 'center' })
   }
 
-  drawPriceBox(doc, product, 536)
+  drawPriceBox(doc, product, 540)
 
   font(doc, F_BOLD, 11, COLORS.dark)
-  doc.text('Detalles', MARGIN, 650)
+  doc.text('Detalles', MARGIN, 652)
   const details = (product.details || '').trim()
   if (details) {
-    const available = 785 - 668
+    const available = 785 - 670
     const sizes = [8.8, 8.4, 8, 7.6, 7.2]
     for (const size of sizes) {
       font(doc, F_TEXT, size, COLORS.taupe)
@@ -291,7 +291,7 @@ function drawProductSingle(
       const lines = doc.splitTextToSize(details, RIGHT - MARGIN) as string[]
       if (lines.length * lineHeight <= available || size === sizes[sizes.length - 1]) {
         const maxLines = Math.max(1, Math.floor(available / lineHeight))
-        wrapAndDraw(doc, details, MARGIN, 668, RIGHT - MARGIN, lineHeight, maxLines)
+        wrapAndDraw(doc, details, MARGIN, 670, RIGHT - MARGIN, lineHeight, maxLines)
         break
       }
     }
@@ -462,6 +462,7 @@ export async function generateCatalogPdf(
 
   return doc.output('blob')
 }
+
 
 
 
